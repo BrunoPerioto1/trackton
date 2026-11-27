@@ -18,7 +18,8 @@ import { siteLabel } from "@/lib/house-url";
 import { formatInt, houseDisplayName } from "@/lib/format";
 import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
-import type { AdminHouse } from "@/api/routes/get-admin";
+import { REGULATION_OPTIONS, SITE_HINT, type AdminHouse, type HouseRegulation } from "@/api/routes/get-admin";
+import { Segmented } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 
 const PAGE = 10;
@@ -26,6 +27,8 @@ const PAGE = 10;
 // "Todas" primeiro: a faixa de chips abre no começo, e o padrão é o que se vê.
 const FILTERS = [
   { id: "all", label: "Todas", test: () => true },
+  { id: "offshore", label: "Offshore", test: (h: AdminHouse) => h.regulation === "offshore" },
+  { id: "federal", label: "Federal", test: (h: AdminHouse) => h.regulation === "federal" },
   { id: "noAlias", label: "Sem apelido", test: (h: AdminHouse) => h.aliases.length === 0 },
   { id: "alias", label: "Com apelido", test: (h: AdminHouse) => h.aliases.length > 0 },
   { id: "noSite", label: "Sem site", test: (h: AdminHouse) => h.isActive && !h.websiteUrl },
@@ -38,7 +41,7 @@ const SORTS: SortOption<CatalogSort>[] = [
 ];
 
 // "https://www.betano.bet.br/x" → "betano.bet.br": o campo guarda só o domínio
-// (o servidor põe o https:// de volta e valida o .bet.br).
+// (o servidor põe o https:// de volta e valida o domínio pela regulação).
 function siteDomain(raw: string): string {
   return raw
     .trim()
@@ -56,6 +59,8 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
   const [draft, setDraft] = useState("");
   const [site, setSite] = useState(house?.websiteUrl ?? "");
   const [active, setActive] = useState(house?.isActive ?? true);
+  // Nova casa nasce offshore: depois da MP as federais estão fora do ar.
+  const [regulation, setRegulation] = useState<HouseRegulation>(house?.regulation ?? "offshore");
   const pending = create.isPending || update.isPending;
   // `house` é a foto de quando a folha abriu; o logo é salvo na hora, então
   // o seletor lê a linha atual da lista.
@@ -72,7 +77,7 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
     if (!name.trim()) return;
     // Apelido digitado e não confirmado com Enter também entra.
     const all = draft.trim() && !aliases.includes(draft.trim()) ? [...aliases, draft.trim()] : aliases;
-    const params = { name: name.trim(), aliases: all, websiteUrl: site.trim() || null };
+    const params = { name: name.trim(), aliases: all, websiteUrl: site.trim() || null, regulation };
     // O 400 aqui é informativo — nome repetido com outra grafia, apelido que
     // já aponta pra outra casa. A mensagem do servidor diz qual.
     const onError = (err: unknown) => actionToast.error({ description: getErrorMessage(err, "Não foi possível salvar a casa.") });
@@ -171,17 +176,17 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
         </div>
       </FormField>
 
-      <FormField
-        label="Site"
-        htmlFor="house-site"
-        help="Só domínio .bet.br ou casa com liminar (ex.: Zeroum). Vira o botão “Abrir casa”."
-      >
+      <FormField label="Regulação">
+        <Segmented label="Regulação" value={regulation} options={REGULATION_OPTIONS} onChange={setRegulation} />
+      </FormField>
+
+      <FormField label="Site" htmlFor="house-site" help={`${SITE_HINT[regulation].help} Vira o botão “Abrir casa”.`}>
         <Input
           id="house-site"
           value={site}
           onChange={(e) => setSite(e.target.value)}
           onBlur={() => setSite((s) => siteDomain(s))}
-          placeholder="casa.bet.br"
+          placeholder={SITE_HINT[regulation].placeholder}
           inputMode="url"
           autoCapitalize="none"
           className="h-[46px] rounded-xl"
@@ -226,6 +231,9 @@ function HouseRow({ house, onEdit }: { house: AdminHouse; onEdit: () => void }) 
       title={
         <span className="flex items-center gap-1.5 min-w-0">
           <span className="truncate">{houseDisplayName(house.name)}</span>
+          {house.regulation === "offshore" && (
+            <span className="shrink-0 rounded-full bg-accent/15 px-1.5 py-px text-[10.5px] font-medium text-accent-text">Offshore</span>
+          )}
           {!house.isActive && (
             <span className="shrink-0 rounded-full bg-foreground/[0.08] px-1.5 py-px text-[10.5px] font-medium text-zinc-400">Inativa</span>
           )}

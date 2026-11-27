@@ -11,7 +11,8 @@ import { useAdminHouses, useCreateAdminHouse } from "@/hooks/queries/use-admin";
 import { splitAliases, useHouseCatalog, useHouseRowEditor } from "@/hooks/admin/use-admin-houses-view";
 import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
-import type { AdminHouse } from "@/api/routes/get-admin";
+import { REGULATION_OPTIONS, SITE_HINT, type AdminHouse, type HouseRegulation } from "@/api/routes/get-admin";
+import { Segmented } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 import { HouseLogoPicker } from "@/components/admin/HouseLogoPicker";
 
@@ -21,6 +22,8 @@ const GRID = "sm:grid sm:items-center sm:gap-4 sm:grid-cols-[minmax(0,1fr)_minma
 const PAGE = 10;
 
 const FILTERS = [
+  { id: "offshore", label: "Offshore", test: (h: AdminHouse) => h.regulation === "offshore" },
+  { id: "federal", label: "Federal", test: (h: AdminHouse) => h.regulation === "federal" },
   { id: "noAlias", label: "Sem apelido", test: (h: AdminHouse) => h.aliases.length === 0 },
   { id: "alias", label: "Com apelido", test: (h: AdminHouse) => h.aliases.length > 0 },
   { id: "noSite", label: "Sem site", test: (h: AdminHouse) => h.isActive && !h.websiteUrl },
@@ -44,6 +47,8 @@ function HouseRow({ house }: { house: AdminHouse }) {
     setAliases,
     site,
     setSite,
+    regulation,
+    setRegulation,
     adding,
     setAdding,
     newAlias,
@@ -64,14 +69,18 @@ function HouseRow({ house }: { house: AdminHouse }) {
         />
         {/* Linha de baixo, embaixo de nome + apelidos: nas colunas estreitas de
             apostas/ações o domínio não caberia. */}
-        <Input
-          value={site}
-          onChange={(e) => setSite(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-          placeholder="Site .bet.br (ex.: betano.bet.br)"
-          inputMode="url"
-          className="sm:col-start-1 sm:col-span-2"
-        />
+        <div className="flex flex-col sm:flex-row gap-2 sm:col-start-1 sm:col-span-2">
+          <Segmented label="Regulação" value={regulation} options={REGULATION_OPTIONS} onChange={setRegulation} />
+          <Input
+            value={site}
+            onChange={(e) => setSite(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+            placeholder={`Site (ex.: ${SITE_HINT[regulation].placeholder})`}
+            title={SITE_HINT[regulation].help}
+            inputMode="url"
+            className="flex-1"
+          />
+        </div>
         <div className="flex gap-2 sm:col-span-2 sm:justify-end">
           <Button size="sm" loading={pending} onClick={saveEdit}>
             {pending ? "Salvando…" : "Salvar"}
@@ -105,6 +114,11 @@ function HouseRow({ house }: { house: AdminHouse }) {
           >
             <ArrowSquareOut size={13} />
           </a>
+        )}
+        {house.regulation === "offshore" && (
+          <span className="text-[10px] font-medium tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent-text">
+            OFFSHORE
+          </span>
         )}
         {!house.isActive && (
           <span className="text-[10px] font-medium tracking-wider px-1.5 py-0.5 rounded bg-foreground/[0.07] opacity-50">
@@ -176,13 +190,15 @@ function NewHouseForm({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState("");
   const [aliases, setAliases] = useState("");
   const [site, setSite] = useState("");
+  // Nova casa nasce offshore: depois da MP as federais estão fora do ar.
+  const [regulation, setRegulation] = useState<HouseRegulation>("offshore");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     create.mutate(
-      { name: name.trim(), aliases: splitAliases(aliases), websiteUrl: site.trim() || null },
+      { name: name.trim(), aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation },
       {
         onSuccess: (house) => {
           actionToast.success({ title: `${house.name} cadastrada` });
@@ -204,13 +220,17 @@ function NewHouseForm({ onDone }: { onDone: () => void }) {
         onChange={(e) => setAliases(e.target.value)}
         placeholder="Apelidos separados por vírgula (opcional)"
       />
-      <Input
-        value={site}
-        onChange={(e) => setSite(e.target.value)}
-        placeholder="Site .bet.br (opcional)"
-        inputMode="url"
-        className="sm:col-start-1 sm:col-span-2"
-      />
+      <div className="flex flex-col sm:flex-row gap-2 sm:col-start-1 sm:col-span-2">
+        <Segmented label="Regulação" value={regulation} options={REGULATION_OPTIONS} onChange={setRegulation} />
+        <Input
+          value={site}
+          onChange={(e) => setSite(e.target.value)}
+          placeholder={`Site (opcional, ex.: ${SITE_HINT[regulation].placeholder})`}
+          title={SITE_HINT[regulation].help}
+          inputMode="url"
+          className="flex-1"
+        />
+      </div>
       <div className="flex gap-2 sm:col-span-2 sm:justify-end">
         <Button type="submit" size="sm" disabled={!name.trim()} loading={create.isPending}>
           {create.isPending ? "Cadastrando…" : "Cadastrar"}
@@ -257,7 +277,7 @@ export function AdminHouses() {
           O apelido é a grafia que aparece na tip — “Superbet Brasil” aponta para{" "}
           <span className="font-medium text-foreground">SUPERBET</span>.
           <br />
-          Site: só domínio .bet.br (autorização federal) ou de casa com liminar liberada (Zeroum) — vira o botão de abrir a casa.
+          Site: casa federal só aceita .bet.br (ou liminar, como Zeroum); offshore aceita o domínio de fora — vira o botão de abrir a casa.
           <br />
           Cadastro global: vale para todos os usuários.
         </>

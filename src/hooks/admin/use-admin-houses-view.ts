@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useUpdateAdminHouse } from "@/hooks/queries/use-admin";
 import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
-import type { AdminHouse } from "@/api/routes/get-admin";
+import type { AdminHouse, HouseRegulation } from "@/api/routes/get-admin";
 
 // Apelidos entram num campo de texto separados por vírgula. Um editor de chips
 // seria mais bonito e resolveria o mesmo: são três nomes por casa, digitados
@@ -20,10 +20,13 @@ export function useHouseRowEditor(house: AdminHouse) {
   const [name, setName] = useState(house.name);
   const [aliases, setAliases] = useState(house.aliases.join(", "));
   const [site, setSite] = useState(house.websiteUrl ?? "");
+  const [regulation, setRegulation] = useState<HouseRegulation>(house.regulation);
   const [adding, setAdding] = useState(false);
   const [newAlias, setNewAlias] = useState("");
 
-  const save = (params: { name?: string; aliases: string[]; websiteUrl?: string | null }, done: () => void) =>
+  const save = (
+    params: { name?: string; aliases: string[]; websiteUrl?: string | null; regulation?: HouseRegulation },
+    done: () => void) =>
     update.mutate(
       { id: house.id, ...params },
       {
@@ -38,7 +41,7 @@ export function useHouseRowEditor(house: AdminHouse) {
 
   const saveEdit = () =>
     save(
-      { name: name.trim() || house.name, aliases: splitAliases(aliases), websiteUrl: site.trim() || null },
+      { name: name.trim() || house.name, aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation },
       () => setEditing(false),
     );
 
@@ -64,6 +67,7 @@ export function useHouseRowEditor(house: AdminHouse) {
     setName(house.name);
     setAliases(house.aliases.join(", "));
     setSite(house.websiteUrl ?? "");
+    setRegulation(house.regulation);
     setEditing(false);
   };
 
@@ -79,6 +83,8 @@ export function useHouseRowEditor(house: AdminHouse) {
     setAliases,
     site,
     setSite,
+    regulation,
+    setRegulation,
     adding,
     setAdding,
     newAlias,
