@@ -51,14 +51,44 @@ export type AdminHouse = {
   isActive: boolean;
   aliases: string[];
   websiteUrl: string | null;
+  regulation: HouseRegulation;
   betCount: number;
   /** Versão do avatar no banco; null = sem logo (iniciais). */
   logoVersion: number | null;
 };
 
-// websiteUrl: só .bet.br (o servidor recusa o resto); "" ou null apaga o link.
-export type CreateAdminHouseParams = { name: string; aliases?: string[]; websiteUrl?: string | null };
-export type UpdateAdminHouseParams = { name?: string; aliases?: string[]; isActive?: boolean; websiteUrl?: string | null };
+/**
+ * federal = autorizada (.bet.br ou liminar tipo Zeroum); offshore = casa
+ * estrangeira, liberada depois da MP. Decide que site o servidor aceita.
+ */
+export type HouseRegulation = "federal" | "offshore";
+
+export const REGULATION_OPTIONS = [
+  { value: "offshore", label: "Offshore" },
+  { value: "federal", label: "Federal" },
+] as const satisfies readonly { value: HouseRegulation; label: string }[];
+
+/** Placeholder e ajuda do campo de site, que mudam com a regulação. */
+export const SITE_HINT: Record<HouseRegulation, { placeholder: string; help: string }> = {
+  federal: { placeholder: "casa.bet.br", help: "Só domínio .bet.br ou casa com liminar (ex.: Zeroum)." },
+  offshore: { placeholder: "cloudbet.com", help: "Domínio da casa no exterior (não aceita .bet.br)." },
+};
+
+// websiteUrl: federal só .bet.br, offshore qualquer domínio (o servidor
+// valida); "" ou null apaga o link.
+export type CreateAdminHouseParams = {
+  name: string;
+  aliases?: string[];
+  websiteUrl?: string | null;
+  regulation?: HouseRegulation;
+};
+export type UpdateAdminHouseParams = {
+  name?: string;
+  aliases?: string[];
+  isActive?: boolean;
+  websiteUrl?: string | null;
+  regulation?: HouseRegulation;
+};
 
 export type UpdateAdminUserParams = {
   roleId?: number;
