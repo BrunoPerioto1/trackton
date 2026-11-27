@@ -13,6 +13,7 @@ import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
 import { REGULATION_OPTIONS, SITE_HINT, type AdminHouse, type HouseRegulation } from "@/api/routes/get-admin";
 import { Segmented } from "@/components/ui/segmented";
+import { HouseAccessFields, houseAccessOf, houseAccessSummary, type HouseAccess } from "@/components/admin/HouseAccessFields";
 import { cn } from "@/lib/utils";
 import { HouseLogoPicker } from "@/components/admin/HouseLogoPicker";
 
@@ -49,6 +50,8 @@ function HouseRow({ house }: { house: AdminHouse }) {
     setSite,
     regulation,
     setRegulation,
+    access,
+    setAccess,
     adding,
     setAdding,
     newAlias,
@@ -80,6 +83,9 @@ function HouseRow({ house }: { house: AdminHouse }) {
             inputMode="url"
             className="flex-1"
           />
+        </div>
+        <div className="sm:col-start-1 sm:col-span-2 max-w-md">
+          <HouseAccessFields value={access} onChange={setAccess} />
         </div>
         <div className="flex gap-2 sm:col-span-2 sm:justify-end">
           <Button size="sm" loading={pending} onClick={saveEdit}>
@@ -114,6 +120,11 @@ function HouseRow({ house }: { house: AdminHouse }) {
           >
             <ArrowSquareOut size={13} />
           </a>
+        )}
+        {houseAccessSummary(houseAccessOf(house)) && (
+          <span className="shrink-0 text-[10px] font-medium tracking-wider px-1.5 py-0.5 rounded border border-border opacity-70">
+            {houseAccessSummary(houseAccessOf(house))}
+          </span>
         )}
         {house.regulation === "offshore" && (
           <span className="text-[10px] font-medium tracking-wider px-1.5 py-0.5 rounded bg-accent/15 text-accent-text">
@@ -192,13 +203,14 @@ function NewHouseForm({ onDone }: { onDone: () => void }) {
   const [site, setSite] = useState("");
   // Nova casa nasce offshore: depois da MP as federais estão fora do ar.
   const [regulation, setRegulation] = useState<HouseRegulation>("offshore");
+  const [access, setAccess] = useState<HouseAccess>(houseAccessOf(null));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     create.mutate(
-      { name: name.trim(), aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation },
+      { name: name.trim(), aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation, ...access },
       {
         onSuccess: (house) => {
           actionToast.success({ title: `${house.name} cadastrada` });
@@ -230,6 +242,9 @@ function NewHouseForm({ onDone }: { onDone: () => void }) {
           inputMode="url"
           className="flex-1"
         />
+      </div>
+      <div className="sm:col-start-1 sm:col-span-2 max-w-md">
+        <HouseAccessFields value={access} onChange={setAccess} />
       </div>
       <div className="flex gap-2 sm:col-span-2 sm:justify-end">
         <Button type="submit" size="sm" disabled={!name.trim()} loading={create.isPending}>

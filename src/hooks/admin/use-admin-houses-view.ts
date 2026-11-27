@@ -3,6 +3,7 @@ import { useUpdateAdminHouse } from "@/hooks/queries/use-admin";
 import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
 import type { AdminHouse, HouseRegulation } from "@/api/routes/get-admin";
+import { houseAccessOf, type HouseAccess } from "@/components/admin/HouseAccessFields";
 
 // Apelidos entram num campo de texto separados por vírgula. Um editor de chips
 // seria mais bonito e resolveria o mesmo: são três nomes por casa, digitados
@@ -21,11 +22,12 @@ export function useHouseRowEditor(house: AdminHouse) {
   const [aliases, setAliases] = useState(house.aliases.join(", "));
   const [site, setSite] = useState(house.websiteUrl ?? "");
   const [regulation, setRegulation] = useState<HouseRegulation>(house.regulation);
+  const [access, setAccess] = useState<HouseAccess>(houseAccessOf(house));
   const [adding, setAdding] = useState(false);
   const [newAlias, setNewAlias] = useState("");
 
   const save = (
-    params: { name?: string; aliases: string[]; websiteUrl?: string | null; regulation?: HouseRegulation },
+    params: { name?: string; aliases: string[]; websiteUrl?: string | null; regulation?: HouseRegulation } & Partial<HouseAccess>,
     done: () => void) =>
     update.mutate(
       { id: house.id, ...params },
@@ -41,7 +43,7 @@ export function useHouseRowEditor(house: AdminHouse) {
 
   const saveEdit = () =>
     save(
-      { name: name.trim() || house.name, aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation },
+      { name: name.trim() || house.name, aliases: splitAliases(aliases), websiteUrl: site.trim() || null, regulation, ...access },
       () => setEditing(false),
     );
 
@@ -68,6 +70,7 @@ export function useHouseRowEditor(house: AdminHouse) {
     setAliases(house.aliases.join(", "));
     setSite(house.websiteUrl ?? "");
     setRegulation(house.regulation);
+    setAccess(houseAccessOf(house));
     setEditing(false);
   };
 
@@ -85,6 +88,8 @@ export function useHouseRowEditor(house: AdminHouse) {
     setSite,
     regulation,
     setRegulation,
+    access,
+    setAccess,
     adding,
     setAdding,
     newAlias,

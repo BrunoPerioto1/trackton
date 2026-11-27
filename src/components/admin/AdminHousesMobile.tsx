@@ -20,6 +20,7 @@ import { actionToast } from "@/lib/action-toast";
 import { getErrorMessage } from "@/lib/api-error";
 import { REGULATION_OPTIONS, SITE_HINT, type AdminHouse, type HouseRegulation } from "@/api/routes/get-admin";
 import { Segmented } from "@/components/ui/segmented";
+import { HouseAccessFields, houseAccessOf, houseAccessSummary, type HouseAccess } from "@/components/admin/HouseAccessFields";
 import { cn } from "@/lib/utils";
 
 const PAGE = 10;
@@ -61,6 +62,7 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
   const [active, setActive] = useState(house?.isActive ?? true);
   // Nova casa nasce offshore: depois da MP as federais estão fora do ar.
   const [regulation, setRegulation] = useState<HouseRegulation>(house?.regulation ?? "offshore");
+  const [access, setAccess] = useState<HouseAccess>(houseAccessOf(house));
   const pending = create.isPending || update.isPending;
   // `house` é a foto de quando a folha abriu; o logo é salvo na hora, então
   // o seletor lê a linha atual da lista.
@@ -77,7 +79,7 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
     if (!name.trim()) return;
     // Apelido digitado e não confirmado com Enter também entra.
     const all = draft.trim() && !aliases.includes(draft.trim()) ? [...aliases, draft.trim()] : aliases;
-    const params = { name: name.trim(), aliases: all, websiteUrl: site.trim() || null, regulation };
+    const params = { name: name.trim(), aliases: all, websiteUrl: site.trim() || null, regulation, ...access };
     // O 400 aqui é informativo — nome repetido com outra grafia, apelido que
     // já aponta pra outra casa. A mensagem do servidor diz qual.
     const onError = (err: unknown) => actionToast.error({ description: getErrorMessage(err, "Não foi possível salvar a casa.") });
@@ -180,6 +182,10 @@ function HouseSheet({ house, onClose }: { house: AdminHouse | null; onClose: () 
         <Segmented label="Regulação" value={regulation} options={REGULATION_OPTIONS} onChange={setRegulation} />
       </FormField>
 
+      <FormField label="Acesso" help="“?” = não informado: a tip sai sem aviso sobre aquele item.">
+        <HouseAccessFields value={access} onChange={setAccess} />
+      </FormField>
+
       <FormField label="Site" htmlFor="house-site" help={`${SITE_HINT[regulation].help} Vira o botão “Abrir casa”.`}>
         <Input
           id="house-site"
@@ -242,6 +248,7 @@ function HouseRow({ house, onEdit }: { house: AdminHouse; onEdit: () => void }) 
       subtitle={
         <>
           {site ?? <span className="text-warning">sem site</span>}
+          {houseAccessSummary(houseAccessOf(house)) && ` · ${houseAccessSummary(houseAccessOf(house))}`}
           {house.aliases.length > 0 && ` · ${house.aliases.join(", ")}`}
         </>
       }

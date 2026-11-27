@@ -18,6 +18,7 @@ import { BankrollSignalsCard } from "./BankrollSignalsCard";
 import { ChangePasswordDialog } from "./ChangePasswordDialog";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { ExportDataCard } from "./ExportDataCard";
+import { HouseAccessCard } from "./HouseAccessCard";
 import { SETTINGS_CARD, SettingsActionRow, SettingsSection } from "./SettingsSection";
 import { TelegramCard } from "./TelegramCard";
 
@@ -166,6 +167,14 @@ export function PerfilDesktopView({ me, summary }: { me: MeResponse; summary: Pr
         description="Base de cálculo da unidade e dos alertas. O bot do Telegram e a lista de casas usam estes valores."
       >
         <BankrollSignalsCard form={prefsForm} />
+      </SettingsSection>
+
+      <SettingsSection
+        id="house-access-title"
+        title="Acesso às casas"
+        description="O que você tem pra entrar nas casas de fora. A tip chega com “✅ Pode acessar” ou com o que falta."
+      >
+        <HouseAccessCard me={me} onSaved={setMe} />
       </SettingsSection>
 
       <SettingsSection

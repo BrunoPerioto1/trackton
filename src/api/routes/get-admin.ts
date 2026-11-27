@@ -52,6 +52,10 @@ export type AdminHouse = {
   aliases: string[];
   websiteUrl: string | null;
   regulation: HouseRegulation;
+  /** Verificador de acesso; null = não informado. */
+  requiresVpn: boolean | null;
+  acceptsPix: boolean | null;
+  acceptsCrypto: boolean | null;
   betCount: number;
   /** Versão do avatar no banco; null = sem logo (iniciais). */
   logoVersion: number | null;
@@ -76,13 +80,20 @@ export const SITE_HINT: Record<HouseRegulation, { placeholder: string; help: str
 
 // websiteUrl: federal só .bet.br, offshore qualquer domínio (o servidor
 // valida); "" ou null apaga o link.
-export type CreateAdminHouseParams = {
+/** Requisitos de acesso da casa; null = não informado (a tip sai sem aviso). */
+export type HouseAccessParams = {
+  requiresVpn?: boolean | null;
+  acceptsPix?: boolean | null;
+  acceptsCrypto?: boolean | null;
+};
+
+export type CreateAdminHouseParams = HouseAccessParams & {
   name: string;
   aliases?: string[];
   websiteUrl?: string | null;
   regulation?: HouseRegulation;
 };
-export type UpdateAdminHouseParams = {
+export type UpdateAdminHouseParams = HouseAccessParams & {
   name?: string;
   aliases?: string[];
   isActive?: boolean;
