@@ -34,6 +34,9 @@ export type MeResponse = {
   minPercentFilter?: string | number | null;
   /** Dias sem apostar numa casa até sugerir saque; null = padrão (20). */
   staleHouseDays?: number | null;
+  /** Verificador de acesso: o bot cruza com o que cada casa exige. */
+  hasVpn?: boolean;
+  hasCrypto?: boolean;
   /** Pro até; vencido = Grátis; null = Pro sem prazo. */
   accessUntil?: string | null;
   /** Só no GET /users/me: o PATCH devolve a conta sem ele. */

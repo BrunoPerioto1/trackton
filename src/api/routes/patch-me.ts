@@ -10,6 +10,8 @@ export interface UpdateMeParams {
   stake?: number;
   minPercentFilter?: number;
   staleHouseDays?: number;
+  hasVpn?: boolean;
+  hasCrypto?: boolean;
   // Exigida pelo servidor só quando o e-mail muda.
   currentPassword?: string;
 }
